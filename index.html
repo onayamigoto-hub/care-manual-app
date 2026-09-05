@@ -314,9 +314,8 @@ function renderList(){
     <p style="font-size:13px;color:var(--muted);">この端末のブラウザに保存されています。他の人と共有したり、別の端末で続きを編集する場合はJSONファイルで書き出し・読み込みができます。</p>
     <div class="toolbar" style="margin:0;">
       <button class="btn-secondary" id="btnExportAll">全データをJSON書き出し</button>
-      <label class="btn-secondary" style="display:inline-block;">
-        JSON読み込み<input type="file" id="importFile" accept="application/json" style="display:none;">
-      </label>
+      <button class="btn-secondary" id="btnImportTrigger">JSON読み込み</button>
+      <input type="file" id="importFile" accept="application/json" style="position:absolute; width:1px; height:1px; opacity:0; overflow:hidden;">
     </div>
   </div>`;
   return html;
@@ -366,6 +365,8 @@ function attachListHandlers(){
     URL.revokeObjectURL(url);
   };
   const importFile = document.getElementById('importFile');
+  const btnImportTrigger = document.getElementById('btnImportTrigger');
+  if(btnImportTrigger && importFile) btnImportTrigger.onclick = ()=> importFile.click();
   if(importFile) importFile.onchange = (e)=>{
     const file = e.target.files[0];
     if(!file) return;
