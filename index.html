@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>株式会社アクティブモア手順書作成アプリ</title>
+<style>
+  :root{
+    --navy:#1b3a5c;
+    --navy-light:#2c5282;
+    --accent:#2b6cb0;
+    --bg:#f4f6f8;
+    --card:#ffffff;
+    --border:#d9dee3;
+    --text:#222;
+    --muted:#666;
+    --danger:#c0392b;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
+    background:var(--bg); color:var(--text); font-size:15px;
+  }
+  header.appbar{
+    background:var(--navy); color:#fff; padding:14px 24px;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  header.appbar h1{font-size:18px; margin:0; font-weight:600;}
+  header.appbar .sub{font-size:12px; opacity:.8;}
+  main{max-width:960px; margin:0 auto; padding:24px 16px 80px;}
+  .card{background:var(--card); border:1px solid var(--border); border-radius:10px; padding:20px; margin-bottom:16px;}
+  h2.section-title{font-size:16px; color:var(--navy); border-left:4px solid var(--accent); padding-left:10px; margin:0 0 16px;}
+  label.field-label{display:block; font-size:13px; color:var(--muted); margin-bottom:4px; font-weight:600;}
+  input[type=text], input[type=number], textarea, select{
+    width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:6px;
+    font-size:14px; font-family:inherit; background:#fff;
+  }
+  textarea{resize:vertical; min-height:70px;}
+  .field{margin-bottom:14px;}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+  .grid3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px;}
+  button{
+    cursor:pointer; border:none; border-radius:6px; padding:10px 18px;
+    font-size:14px; font-weight:600; font-family:inherit;
+  }
+  .btn-primary{background:var(--accent); color:#fff;}
+  .btn-primary:hover{background:var(--navy-light);}
+  .btn-secondary{background:#e9edf1; color:var(--text);}
+  .btn-secondary:hover{background:#dfe4e9;}
+  .btn-danger{background:#fdecea; color:var(--danger);}
+  .btn-danger:hover{background:#f8d7d2;}
+  .btn-ghost{background:transparent; color:var(--accent); padding:6px 8px;}
+  .toolbar{display:flex; gap:10px; margin:20px 0; flex-wrap:wrap;}
+  .step-row{
+    display:flex; align-items:center; gap:12px; padding:12px; border:1px solid var(--border);
+    border-radius:8px; margin-bottom:10px; background:#fbfcfd;
+  }
+  .step-row .num{
+    width:30px; height:30px; border-radius:50%; background:var(--navy); color:#fff;
+    display:flex; align-items:center; justify-content:center; font-weight:700; flex-shrink:0;
+  }
+  .step-row .info{flex:1;}
+  .step-row .info .name{font-weight:600;}
+  .step-row .info .meta{font-size:12px; color:var(--muted);}
+  .step-row .actions{display:flex; gap:6px;}
+  .manual-item{
+    display:flex; justify-content:space-between; align-items:center; padding:14px;
+    border:1px solid var(--border); border-radius:8px; margin-bottom:10px; background:#fff;
+  }
+  .manual-item .title{font-weight:700; color:var(--navy);}
+  .manual-item .sub{font-size:12px; color:var(--muted); margin-top:2px;}
+  .empty{color:var(--muted); text-align:center; padding:40px 0;}
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(0,0,0,.4); display:flex; align-items:flex-start;
+    justify-content:center; overflow:auto; z-index:50; padding:30px 12px;
+  }
+  .modal{background:#fff; border-radius:10px; width:100%; max-width:640px; padding:24px;}
+  .modal h3{margin-top:0; color:var(--navy);}
+  .modal-actions{display:flex; justify-content:flex-end; gap:10px; margin-top:20px;}
+  .badge{display:inline-block; font-size:11px; padding:2px 8px; border-radius:10px; background:#e3edf7; color:var(--navy); font-weight:700;}
+  .branch-box{border:1px dashed var(--accent); border-radius:8px; padding:12px; margin-top:10px; background:#f3f8fd;}
+  .image-drop{
+    border:2px dashed var(--border); border-radius:8px; padding:14px; text-align:center; color:var(--muted);
+    cursor:pointer; font-size:13px;
+  }
+  .image-preview{max-width:100%; max-height:160px; display:block; margin:0 auto 8px;}
+  .tabs{display:flex; gap:0; border-bottom:2px solid var(--border); margin-bottom:20px;}
+  .tabs button{
+    background:none; border-radius:0; color:var(--muted); padding:10px 18px; border-bottom:3px solid transparent;
+  }
+  .tabs button.active{color:var(--navy); border-bottom-color:var(--accent);}
+
+  /* ---------- Preview / print layout ---------- */
+  .sheet{background:#fff; border:1px solid var(--border); padding:28px; margin-bottom:20px;}
+  .sheet h1.doc-title{
+    font-size:22px; color:#fff; background:var(--navy); padding:12px 18px; margin:0 0 18px; border-radius:4px;
+  }
+  table.meta-table{width:100%; border-collapse:collapse; margin-bottom:24px; font-size:13px;}
+  table.meta-table th, table.meta-table td{border:1px solid var(--border); padding:8px 10px; text-align:left; vertical-align:top;}
+  table.meta-table th{background:#eef3f8; color:var(--navy); width:120px; font-weight:700;}
+  .flow-wrap{margin-bottom:28px; overflow-x:auto;}
+  .flow-wrap h3, .steps-wrap h3{font-size:14px; color:var(--navy); margin:0 0 10px;}
+  .step-block{
+    display:flex; gap:16px; border:1px solid var(--border); border-radius:8px; margin-bottom:14px; overflow:hidden;
+    page-break-inside:avoid;
+  }
+  .step-block .side{
+    width:56px; background:var(--navy); color:#fff; display:flex; align-items:center; justify-content:center;
+    font-size:22px; font-weight:700; flex-shrink:0;
+  }
+  .step-block .body{flex:1; padding:14px 16px;}
+  .step-block .body .top-row{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px;}
+  .step-block .body .top-row .name{font-weight:700; font-size:15px;}
+  .step-block .body .top-row .time{font-size:12px; color:var(--muted);}
+  .step-block .body ul{margin:0; padding-left:20px;}
+  .step-block .body ul li{margin-bottom:4px; font-size:13px;}
+  .step-block .imgcell{width:150px; flex-shrink:0; display:flex; align-items:center; justify-content:center; padding:10px; background:#fafafa; border-left:1px solid var(--border);}
+  .step-block .imgcell img{max-width:100%; max-height:120px;}
+  .step-block .imgcell .noimg{font-size:11px; color:#aaa; text-align:center;}
+  .print-actions{display:flex; gap:10px; margin-bottom:16px;}
+  .doc-footer{margin-top:16px; padding-top:8px; border-top:1px solid var(--border); font-size:11px; color:var(--muted);}
+  .doc-footer-sep{margin:0 8px;}
+  .memo-box{
+    margin-top:20px; border:1px dashed var(--border); border-radius:8px; padding:12px 14px; min-height:160px;
+  }
+  .memo-box .memo-label{font-size:12px; font-weight:700; color:var(--muted); margin-bottom:8px;}
+  .precautions-box{
+    margin-top:20px; border:1px solid #f0c36d; background:#fffaf0; border-radius:8px; padding:12px 14px;
+  }
+  .precautions-box .precautions-label{font-size:13px; font-weight:700; color:#8a5a00; margin-bottom:6px;}
+  .precautions-box .precautions-text{font-size:13px; color:#333; line-height:1.6; white-space:pre-wrap;}
+  .page-break{ break-before:page; page-break-before:always; }
+  @media print{
+    header.appbar, .toolbar, .print-actions, .tabs{display:none !important;}
+    body{background:#fff;}
+    main{max-width:none; padding:0; margin:0;}
+    .sheet{border:none; padding:0;}
+  }
+</style>
+</head>
+<body>
+<header class="appbar">
+  <div style="display:flex; align-items:center; gap:12px;">
+    <img src="logo.png" alt="ロゴ" style="height:40px; width:40px; object-fit:contain; background:#fff; border-radius:8px; padding:2px;">
+    <div>
+      <h1 id="appTitle">株式会社アクティブモア手順書作成アプリ</h1>
+      <div class="sub" id="appSub">アクティブモア 手順書統一フォーマット</div>
+    </div>
+  </div>
+  <div id="headerActions"></div>
+</header>
+<main id="app"></main>
+
+<script>
+/* ---------------- storage ---------------- */
+const STORAGE_KEY = 'care_manuals_v1';
+
+function loadManuals(){
+  let list;
+  try{ list = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+  catch(e){ return []; }
+  list.forEach(normalizeManual);
+  return list;
+}
+// migrate old single "purpose" field into split purposeUser/purposeStaff, and fill any missing basic fields
+function normalizeManual(m){
+  const b = m.basic || (m.basic = {});
+  if(b.purposeUser === undefined) b.purposeUser = b.purpose || '';
+  if(b.purposeStaff === undefined) b.purposeStaff = '';
+  if(b.facility === undefined) b.facility = '';
+  if(b.category === undefined) b.category = '';
+  if(b.precautions === undefined) b.precautions = '';
+  delete b.purpose;
+  if(m.revisions === undefined) m.revisions = [];
+  return m;
+}
+function fmtDate(ts){
+  const d = new Date(ts);
+  return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
+}
+function saveManuals(list){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+}
+function uid(){ return 'm_' + Date.now() + '_' + Math.random().toString(36).slice(2,8); }
+
+const FACILITIES = [
+  '愛ほっと訪問看護ステーション（宇和島）',
+  '愛ほっと訪問看護ステーション（愛なん）',
+  '愛ほっとリハビリステーションうわじま',
+  '愛ほっとデイサービスきほく',
+  'サービス付き高齢者向け住宅愛ほっと',
+  '愛ほっと療育ステーション'
+];
+
+function newManual(){
+  return {
+    id: uid(),
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    basic: {
+      facility:'', category:'', title:'', jobRole:'', purposeUser:'', purposeStaff:'', target:'', deadline:'', completionState:'', totalTime:'', precautions:''
+    },
+    steps: [],
+    revisions: []
+  };
+}
+function newStep(){
+  return {
+    itemName:'', timeEstimate:'', procedureLines:[''], image:null,
+    branch:{ enabled:false, question:'', yesTarget:'next', noTarget:'self' }
+  };
+}
+
+/* ---------------- state ---------------- */
+let state = {
+  screen: 'list',      // list | basic | steps | preview
+  manualId: null,
+  editingStepIndex: null,
+  tempStep: null
+};
+
+function currentManual(){
+  const list = loadManuals();
+  return list.find(m => m.id === state.manualId) || null;
+}
+function updateManual(mutator){
+  const list = loadManuals();
+  const idx = list.findIndex(m => m.id === state.manualId);
+  if(idx === -1) return;
+  mutator(list[idx]);
+  list[idx].updatedAt = Date.now();
+  saveManuals(list);
+  render();
+}
+
+/* ---------------- render dispatch ---------------- */
+function render(){
+  const app = document.getElementById('app');
+  const headerActions = document.getElementById('headerActions');
+  headerActions.innerHTML = '';
+  if(state.screen === 'list'){
+    document.getElementById('appSub').textContent = 'アクティブモア 手順書統一フォーマット';
+    app.innerHTML = renderList();
+    attachListHandlers();
+  } else {
+    const m = currentManual();
+    if(!m){ state.screen='list'; return render(); }
+    document.getElementById('appSub').textContent = (m.basic.title || '(タイトル未入力)');
+    const backBtn = document.createElement('button');
+    backBtn.className='btn-secondary'; backBtn.textContent='一覧へ戻る';
+    backBtn.onclick = ()=>{ state.screen='list'; state.manualId=null; render(); };
+    headerActions.appendChild(backBtn);
+
+    let tabsHtml = renderTabs();
+    if(state.screen === 'basic'){
+      app.innerHTML = tabsHtml + renderBasic(m);
+      attachBasicHandlers();
+    } else if(state.screen === 'steps'){
+      app.innerHTML = tabsHtml + renderSteps(m);
+      attachStepsHandlers();
+    } else if(state.screen === 'preview'){
+      app.innerHTML = tabsHtml + renderPreview(m);
+      attachPreviewHandlers();
+    }
+  }
+}
+
+function renderTabs(){
+  const tabs = [
+    {id:'basic', label:'① 基本情報'},
+    {id:'steps', label:'② 手順を入力'},
+    {id:'preview', label:'③ 手順書プレビュー・印刷'}
+  ];
+  return '<div class="tabs">' + tabs.map(t =>
+    `<button data-tab="${t.id}" class="${state.screen===t.id?'active':''}">${t.label}</button>`
+  ).join('') + '</div>';
+}
+
+/* ---------------- LIST screen ---------------- */
+function renderList(){
+  const list = loadManuals().sort((a,b)=>b.updatedAt-a.updatedAt);
+  let html = '<div class="toolbar"><button class="btn-primary" id="btnNewManual">＋ 新しい手順書を作成</button></div>';
+  if(list.length === 0){
+    html += '<div class="card"><div class="empty">まだ手順書がありません。「＋ 新しい手順書を作成」から始めてください。</div></div>';
+  } else {
+    html += '<div class="card">';
+    list.forEach(m=>{
+      const d = new Date(m.updatedAt);
+      const dstr = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+      html += `<div class="manual-item">
+        <div>
+          <div class="title">${m.basic.category?'<span class="badge">'+escapeHtml(m.basic.category)+'</span> ':''}${escapeHtml(m.basic.title || '(タイトル未入力)')}</div>
+          <div class="sub">${escapeHtml(m.basic.facility||'(事業所未選択)')} ／ ${escapeHtml(m.basic.jobRole||'')} ／ 手順数:${m.steps.length} ／ 更新:${dstr}</div>
+        </div>
+        <div class="actions" style="display:flex;gap:8px;">
+          <button class="btn-secondary" data-open="${m.id}">開く</button>
+          <button class="btn-ghost" data-dup="${m.id}">複製</button>
+          <button class="btn-danger" data-del="${m.id}">削除</button>
+        </div>
+      </div>`;
+    });
+    html += '</div>';
+  }
+  html += `<div class="card">
+    <h2 class="section-title">バックアップ・共有</h2>
+    <p style="font-size:13px;color:var(--muted);">この端末のブラウザに保存されています。他の人と共有したり、別の端末で続きを編集する場合はJSONファイルで書き出し・読み込みができます。</p>
+    <div class="toolbar" style="margin:0;">
+      <button class="btn-secondary" id="btnExportAll">全データをJSON書き出し</button>
+      <label class="btn-secondary" style="display:inline-block;">
+        JSON読み込み<input type="file" id="importFile" accept="application/json" style="display:none;">
+      </label>
+    </div>
+  </div>`;
+  return html;
+}
+function attachListHandlers(){
+  const btnNew = document.getElementById('btnNewManual');
+  if(btnNew) btnNew.onclick = ()=>{
+    const list = loadManuals();
+    const m = newManual();
+    list.push(m);
+    saveManuals(list);
+    state.manualId = m.id;
+    state.screen = 'basic';
+    render();
+  };
+  document.querySelectorAll('[data-open]').forEach(el=>{
+    el.onclick = ()=>{ state.manualId = el.getAttribute('data-open'); state.screen='basic'; render(); };
+  });
+  document.querySelectorAll('[data-dup]').forEach(el=>{
+    el.onclick = ()=>{
+      const list = loadManuals();
+      const src = list.find(m=>m.id===el.getAttribute('data-dup'));
+      if(!src) return;
+      const copy = JSON.parse(JSON.stringify(src));
+      copy.id = uid(); copy.createdAt=Date.now(); copy.updatedAt=Date.now();
+      copy.basic.title = (copy.basic.title||'') + '（コピー）';
+      list.push(copy); saveManuals(list); render();
+    };
+  });
+  document.querySelectorAll('[data-del]').forEach(el=>{
+    el.onclick = ()=>{
+      appConfirm('この手順書を削除しますか？元に戻せません。', ()=>{
+        let list = loadManuals();
+        list = list.filter(m=>m.id!==el.getAttribute('data-del'));
+        saveManuals(list); render();
+      });
+    };
+  });
+  const btnExport = document.getElementById('btnExportAll');
+  if(btnExport) btnExport.onclick = ()=>{
+    const data = JSON.stringify(loadManuals(), null, 2);
+    const blob = new Blob([data], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'manuals_backup.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  };
+  const importFile = document.getElementById('importFile');
+  if(importFile) importFile.onchange = (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      try{
+        const incoming = JSON.parse(reader.result);
+        if(!Array.isArray(incoming)) throw new Error('形式が違います');
+        const existing = loadManuals();
+        const merged = existing.concat(incoming.filter(im=>!existing.some(ex=>ex.id===im.id)));
+        saveManuals(merged);
+        alert('読み込みました。');
+        render();
+      }catch(err){ alert('読み込みに失敗しました: '+err.message); }
+    };
+    reader.readAsText(file);
+  };
+}
+
+/* ---------------- BASIC screen ---------------- */
+function renderBasic(m){
+  const b = m.basic;
+  return `<div class="card">
+    <h2 class="section-title">基本情報を入力する</h2>
+    <div class="field">
+      <label class="field-label">事業所</label>
+      <select id="f_facility">
+        <option value="">選択してください</option>
+        ${FACILITIES.map(f=>`<option value="${attr(f)}" ${b.facility===f?'selected':''}>${escapeHtml(f)}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field">
+      <label class="field-label">カテゴリー</label>
+      <select id="f_category">
+        <option value="">選択してください</option>
+        <option value="直接介助" ${b.category==='直接介助'?'selected':''}>直接介助</option>
+        <option value="間接介助" ${b.category==='間接介助'?'selected':''}>間接介助</option>
+      </select>
+    </div>
+    <div class="field">
+      <label class="field-label">タイトル（手順書名）</label>
+      <input type="text" id="f_title" value="${attr(b.title)}" placeholder="例）居室環境整備の手順（サ高住・間接介助）">
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label class="field-label">対象職種</label>
+        <input type="text" id="f_jobRole" value="${attr(b.jobRole)}" placeholder="例）生活相談員、介護職員">
+      </div>
+      <div class="field">
+        <label class="field-label">対象者・対象範囲</label>
+        <input type="text" id="f_target" value="${attr(b.target)}" placeholder="例）サ高住 全入居者">
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label class="field-label">目的（利用者視点）</label>
+        <textarea id="f_purposeUser" placeholder="例）快適で清潔な居室で安心して過ごせる">${escapeHtml(b.purposeUser)}</textarea>
+      </div>
+      <div class="field">
+        <label class="field-label">目的（スタッフ視点）</label>
+        <textarea id="f_purposeStaff" placeholder="例）誰が担当しても同じ品質で環境整備ができる">${escapeHtml(b.purposeStaff)}</textarea>
+      </div>
+    </div>
+    <div class="grid3">
+      <div class="field">
+        <label class="field-label">完了期限</label>
+        <input type="text" id="f_deadline" value="${attr(b.deadline)}" placeholder="例）15分以内に終わる">
+      </div>
+      <div class="field">
+        <label class="field-label">完了時の状態（ゴール）</label>
+        <input type="text" id="f_completionState" value="${attr(b.completionState)}" placeholder="例）ゴミがなくなり、清潔で換気された居室になっている">
+      </div>
+      <div class="field">
+        <label class="field-label">全体の所要時間目安</label>
+        <input type="text" id="f_totalTime" value="${attr(b.totalTime)}" placeholder="例）20分">
+      </div>
+    </div>
+    <div class="field">
+      <label class="field-label">注意事項・心得</label>
+      <textarea id="f_precautions" placeholder="例）利用者様の私物には手を触れない。体調がすぐれない様子の時は先に声をかけ、無理に作業を進めない。">${escapeHtml(b.precautions)}</textarea>
+    </div>
+    <div class="toolbar">
+      <button class="btn-primary" id="btnToSteps">次へ（手順を入力する）</button>
+    </div>
+  </div>`;
+}
+function attachBasicHandlers(){
+  ['title','jobRole','target','purposeUser','purposeStaff','deadline','completionState','totalTime','precautions'].forEach(key=>{
+    const el = document.getElementById('f_'+key);
+    if(!el) return;
+    el.oninput = ()=>{
+      updateManualSilent(m => m.basic[key] = el.value);
+    };
+  });
+  const facilityEl = document.getElementById('f_facility');
+  if(facilityEl) facilityEl.onchange = ()=>{
+    updateManualSilent(m => m.basic.facility = facilityEl.value);
+  };
+  const categoryEl = document.getElementById('f_category');
+  if(categoryEl) categoryEl.onchange = ()=>{
+    updateManualSilent(m => m.basic.category = categoryEl.value);
+  };
+  const nextBtn = document.getElementById('btnToSteps');
+  if(nextBtn) nextBtn.onclick = ()=>{ state.screen='steps'; render(); };
+  document.querySelectorAll('.tabs [data-tab]').forEach(b=>b.onclick=()=>{ state.screen=b.getAttribute('data-tab'); render(); });
+}
+// silent update: mutate localStorage without full re-render (keeps input focus)
+function updateManualSilent(mutator){
+  const list = loadManuals();
+  const idx = list.findIndex(m => m.id === state.manualId);
+  if(idx === -1) return;
+  mutator(list[idx]);
+  list[idx].updatedAt = Date.now();
+  saveManuals(list);
+}
+
+/* ---------------- STEPS screen ---------------- */
+function stepTargetLabel(m, target){
+  if(target === 'next') return '次の手順へ進む';
+  if(target === 'end') return '終了';
+  if(target === 'self') return 'この手順をやり直す';
+  const idx = parseInt(String(target).replace('step:',''),10);
+  if(!isNaN(idx) && m.steps[idx]) return `手順${idx+1}「${m.steps[idx].itemName||'(未入力)'}」へ`;
+  return target;
+}
+function renderSteps(m){
+  let html = '<div class="card"><h2 class="section-title">手順を入力する</h2>';
+  if(m.steps.length===0){
+    html += '<div class="empty">まだ手順がありません。「＋ 手順を追加」から入力してください。</div>';
+  } else {
+    m.steps.forEach((s, i)=>{
+      html += `<div class="step-row">
+        <div class="num">${i+1}</div>
+        <div class="info">
+          <div class="name">${escapeHtml(s.itemName || '(項目名未入力)')} ${s.timeEstimate ? '<span class="badge">目安 '+escapeHtml(s.timeEstimate)+'</span>' : ''}</div>
+          <div class="meta">${s.procedureLines.filter(x=>x.trim()).length}件の作業手順${s.image?'／画像あり':''}${s.branch.enabled?'／分岐あり（'+escapeHtml(s.branch.question||'条件未入力')+'）':''}</div>
+        </div>
+        <div class="actions">
+          <button class="btn-ghost" data-up="${i}" title="上へ" ${i===0?'disabled':''}>↑</button>
+          <button class="btn-ghost" data-down="${i}" title="下へ" ${i===m.steps.length-1?'disabled':''}>↓</button>
+          <button class="btn-secondary" data-edit="${i}">編集</button>
+          <button class="btn-danger" data-remove="${i}">削除</button>
+        </div>
+      </div>`;
+    });
+  }
+  html += `<div class="toolbar"><button class="btn-primary" id="btnAddStep">＋ 手順を追加</button></div>`;
+  html += `<div class="toolbar"><button class="btn-secondary" id="btnToPreview">次へ（プレビューを見る）</button></div>`;
+  html += '</div>';
+  html += renderStepModalContainer(m);
+  return html;
+}
+function attachStepsHandlers(){
+  document.querySelectorAll('.tabs [data-tab]').forEach(b=>b.onclick=()=>{ state.screen=b.getAttribute('data-tab'); render(); });
+  const m = currentManual();
+  document.querySelectorAll('[data-edit]').forEach(el=>{
+    el.onclick = ()=>{ openStepModal(parseInt(el.getAttribute('data-edit'),10)); };
+  });
+  document.querySelectorAll('[data-remove]').forEach(el=>{
+    el.onclick = ()=>{
+      const i = parseInt(el.getAttribute('data-remove'),10);
+      appConfirm('この手順を削除しますか？', ()=>{
+        updateManual(m=>m.steps.splice(i,1));
+      });
+    };
+  });
+  document.querySelectorAll('[data-up]').forEach(el=>{
+    el.onclick = ()=>{
+      const i = parseInt(el.getAttribute('data-up'),10);
+      updateManual(m=>{ const t=m.steps[i-1]; m.steps[i-1]=m.steps[i]; m.steps[i]=t; });
+    };
+  });
+  document.querySelectorAll('[data-down]').forEach(el=>{
+    el.onclick = ()=>{
+      const i = parseInt(el.getAttribute('data-down'),10);
+      updateManual(m=>{ const t=m.steps[i+1]; m.steps[i+1]=m.steps[i]; m.steps[i]=t; });
+    };
+  });
+  const addBtn = document.getElementById('btnAddStep');
+  if(addBtn) addBtn.onclick = ()=>{ openStepModal(null); };
+  const prevBtn = document.getElementById('btnToPreview');
+  if(prevBtn) prevBtn.onclick = ()=>{ state.screen='preview'; render(); };
+}
+
+function renderStepModalContainer(m){
+  if(state.editingStepIndex === undefined || state.editingStepIndex === null) return '<div id="stepModalRoot"></div>';
+  return `<div id="stepModalRoot">${renderStepModal(m)}</div>`;
+}
+function openStepModal(index){
+  const m = currentManual();
+  state.editingStepIndex = (index === null ? -1 : index);
+  state.tempStep = index === null ? newStep() : JSON.parse(JSON.stringify(m.steps[index]));
+  render();
+  setTimeout(()=>{ const t=document.getElementById('m_itemName'); if(t) t.focus(); }, 0);
+}
+function closeStepModal(){
+  state.editingStepIndex = null;
+  state.tempStep = null;
+  render();
+}
+function renderStepModal(m){
+  const s = state.tempStep;
+  const isNew = state.editingStepIndex === -1;
+  const otherStepOptions = (excludeIdx)=> m.steps.map((st,i)=>{
+    if(i===excludeIdx) return '';
+    return `<option value="step:${i}">手順${i+1}: ${escapeHtml(st.itemName||'(未入力)')}</option>`;
+  }).join('');
+  const linesHtml = s.procedureLines.map((line,i)=>`
+    <div style="display:flex; gap:6px; margin-bottom:6px;">
+      <input type="text" class="proc-line" data-idx="${i}" value="${attr(line)}" placeholder="作業手順を入力">
+      <button type="button" class="btn-ghost proc-remove" data-idx="${i}" ${s.procedureLines.length<=1?'disabled':''}>×</button>
+    </div>`).join('');
+  return `<div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <h3>${isNew?'手順を追加':'手順を編集'}</h3>
+      <div class="grid2">
+        <div class="field">
+          <label class="field-label">項目名</label>
+          <input type="text" id="m_itemName" value="${attr(s.itemName)}" placeholder="例）居室の換気を行う">
+        </div>
+        <div class="field">
+          <label class="field-label">所要時間目安</label>
+          <input type="text" id="m_timeEstimate" value="${attr(s.timeEstimate)}" placeholder="例）3分">
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label">作業手順（箇条書き）</label>
+        <div id="procLines">${linesHtml}</div>
+        <button type="button" class="btn-ghost" id="btnAddLine">＋ 行を追加</button>
+      </div>
+      <div class="field">
+        <label class="field-label">画像</label>
+        ${s.image ? `
+          <div style="position:relative; display:inline-block; max-width:100%;">
+            <img class="image-preview" src="${s.image}" style="display:block;">
+            <button type="button" id="btnRemoveImage" title="画像を削除"
+              style="position:absolute; top:6px; right:6px; width:28px; height:28px; border-radius:50%;
+              background:rgba(192,57,43,.9); color:#fff; font-size:16px; font-weight:700; line-height:1; padding:0;">×</button>
+          </div>
+          <div>
+            <label class="btn-ghost" style="display:inline-block; margin-top:6px;">
+              別の画像に変更<input type="file" id="imageInput" accept="image/*" style="display:none;">
+            </label>
+          </div>
+        ` : `
+          <div class="image-drop" id="imageDrop">クリックして画像を選択</div>
+          <input type="file" id="imageInput" accept="image/*" style="display:none;">
+        `}
+      </div>
+      <div class="field">
+        <label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; color:var(--muted);">
+          <input type="checkbox" id="m_branchEnabled" ${s.branch.enabled?'checked':''}>
+          この手順に分岐（YES/NO）を設定する
+        </label>
+        <div class="branch-box" id="branchBox" style="${s.branch.enabled?'':'display:none;'}">
+          <div class="field">
+            <label class="field-label">判断の質問文</label>
+            <input type="text" id="m_branchQuestion" value="${attr(s.branch.question)}" placeholder="例）手順どおりにできたか？">
+          </div>
+          <div class="grid2">
+            <div class="field">
+              <label class="field-label">YESの場合</label>
+              <select id="m_yesTarget">
+                <option value="next" ${s.branch.yesTarget==='next'?'selected':''}>次の手順へ進む</option>
+                <option value="end" ${s.branch.yesTarget==='end'?'selected':''}>終了</option>
+                ${otherStepOptions(state.editingStepIndex).replace('${sel}','')}
+              </select>
+            </div>
+            <div class="field">
+              <label class="field-label">NOの場合</label>
+              <select id="m_noTarget">
+                <option value="self" ${s.branch.noTarget==='self'?'selected':''}>この手順をやり直す</option>
+                <option value="end" ${s.branch.noTarget==='end'?'selected':''}>終了</option>
+                ${otherStepOptions(state.editingStepIndex)}
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-secondary" id="btnCancelStep">キャンセル</button>
+        <button class="btn-primary" id="btnSaveStep">保存</button>
+      </div>
+    </div>
+  </div>`;
+}
+function fixSelectValue(id, value){
+  const el = document.getElementById(id);
+  if(el) el.value = value;
+}
+function attachStepModalHandlers(){
+  const overlay = document.getElementById('modalOverlay');
+  if(!overlay) return;
+  // fix select values (since options generated without dynamic 'selected' for step targets reliably)
+  fixSelectValue('m_yesTarget', state.tempStep.branch.yesTarget);
+  fixSelectValue('m_noTarget', state.tempStep.branch.noTarget);
+
+  document.getElementById('m_itemName').oninput = e=>{ state.tempStep.itemName = e.target.value; };
+  document.getElementById('m_timeEstimate').oninput = e=>{ state.tempStep.timeEstimate = e.target.value; };
+  document.querySelectorAll('.proc-line').forEach(el=>{
+    el.oninput = ()=>{ state.tempStep.procedureLines[parseInt(el.getAttribute('data-idx'),10)] = el.value; };
+  });
+  document.querySelectorAll('.proc-remove').forEach(el=>{
+    el.onclick = ()=>{
+      state.tempStep.procedureLines.splice(parseInt(el.getAttribute('data-idx'),10),1);
+      render();
+    };
+  });
+  document.getElementById('btnAddLine').onclick = ()=>{
+    state.tempStep.procedureLines.push('');
+    render();
+  };
+  const imageDrop = document.getElementById('imageDrop');
+  const imageInput = document.getElementById('imageInput');
+  if(imageDrop) imageDrop.onclick = ()=> imageInput.click();
+  if(imageInput) imageInput.onchange = (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ()=>{ state.tempStep.image = reader.result; render(); };
+    reader.readAsDataURL(file);
+  };
+  const removeImgBtn = document.getElementById('btnRemoveImage');
+  if(removeImgBtn) removeImgBtn.onclick = ()=>{ state.tempStep.image = null; render(); };
+
+  document.getElementById('m_branchEnabled').onchange = (e)=>{
+    state.tempStep.branch.enabled = e.target.checked;
+    render();
+  };
+  const q = document.getElementById('m_branchQuestion');
+  if(q) q.oninput = e=>{ state.tempStep.branch.question = e.target.value; };
+  const yesSel = document.getElementById('m_yesTarget');
+  if(yesSel) yesSel.onchange = e=>{ state.tempStep.branch.yesTarget = e.target.value; };
+  const noSel = document.getElementById('m_noTarget');
+  if(noSel) noSel.onchange = e=>{ state.tempStep.branch.noTarget = e.target.value; };
+
+  document.getElementById('btnCancelStep').onclick = ()=> closeStepModal();
+  document.getElementById('btnSaveStep').onclick = ()=>{
+    const s = state.tempStep;
+    if(!s.itemName.trim()){ alert('項目名を入力してください。'); return; }
+    const idx = state.editingStepIndex;
+    updateManual(m=>{
+      if(idx === -1){ m.steps.push(s); }
+      else { m.steps[idx] = s; }
+    });
+    state.editingStepIndex = null;
+    state.tempStep = null;
+    render();
+  };
+}
+
+/* ---------------- PREVIEW screen ---------------- */
+function renderPreview(m){
+  let html = `<div class="print-actions">
+    <button class="btn-primary" id="btnPrint">印刷 / PDF保存</button>
+    <button class="btn-secondary" id="btnAddRevision">＋改訂を記録する</button>
+  </div>`;
+  html += '<div class="sheet" id="printSheet">';
+  html += `<h1 class="doc-title">${m.basic.category?'【'+escapeHtml(m.basic.category)+'】':''}${escapeHtml(m.basic.title || '(タイトル未入力)')}</h1>`;
+  html += `<table class="meta-table">
+    <tr><th>事業所</th><td colspan="3">${escapeHtml(m.basic.facility)}</td></tr>
+    <tr><th>対象職種</th><td>${escapeHtml(m.basic.jobRole)}</td><th>対象者・範囲</th><td>${escapeHtml(m.basic.target)}</td></tr>
+    <tr><th>目的（利用者視点）</th><td colspan="3">${escapeHtml(m.basic.purposeUser).replace(/\n/g,'<br>')}</td></tr>
+    <tr><th>目的（スタッフ視点）</th><td colspan="3">${escapeHtml(m.basic.purposeStaff).replace(/\n/g,'<br>')}</td></tr>
+    <tr><th>完了期限</th><td>${escapeHtml(m.basic.deadline)}</td><th>完了時の状態</th><td>${escapeHtml(m.basic.completionState)}</td></tr>
+    <tr><th>所要時間目安</th><td colspan="3">${escapeHtml(m.basic.totalTime)}</td></tr>
+  </table>`;
+
+  if(m.basic.precautions && m.basic.precautions.trim()){
+    html += `<div class="precautions-box">
+      <div class="precautions-label">⚠ 注意事項・心得</div>
+      <div class="precautions-text">${escapeHtml(m.basic.precautions).replace(/\n/g,'<br>')}</div>
+    </div>`;
+  }
+
+  const revs = (m.revisions||[]).slice().sort((a,b)=>a.date-b.date);
+  html += `<div class="memo-box"><div class="memo-label">メモ・備考欄</div></div>`;
+  html += `<div class="doc-footer">
+    <span>作成日: ${fmtDate(m.createdAt)}</span>
+    ${revs.length ? '<span class="doc-footer-sep">｜</span><span>改訂履歴: ' + revs.map(r=>`${fmtDate(r.date)}${r.note?'（'+escapeHtml(r.note)+'）':''}`).join('、') + '</span>' : ''}
+  </div>`;
+
+  html += '<div class="flow-wrap page-break"><h3>ワークフロー</h3>' + renderFlowchartSVG(m) + '</div>';
+  html += '<div class="steps-wrap page-break"><h3>作業手順</h3>';
+  if(m.steps.length===0){
+    html += '<div class="empty">手順が入力されていません。</div>';
+  } else {
+    m.steps.forEach((s,i)=>{
+      html += `<div class="step-block">
+        <div class="side">${i+1}</div>
+        <div class="body">
+          <div class="top-row"><div class="name">${escapeHtml(s.itemName||'(未入力)')}</div><div class="time">${s.timeEstimate?'目安 '+escapeHtml(s.timeEstimate):''}</div></div>
+          <ul>${s.procedureLines.filter(l=>l.trim()).map(l=>`<li>${escapeHtml(l)}</li>`).join('') || '<li style="color:#999;">(作業手順未入力)</li>'}</ul>
+          ${s.branch.enabled ? `<div style="margin-top:8px;font-size:12px;color:var(--accent);">分岐: 「${escapeHtml(s.branch.question||'(条件未入力)')}」 → YES: ${escapeHtml(stepTargetLabel(m,s.branch.yesTarget))} ／ NO: ${escapeHtml(stepTargetLabel(m,s.branch.noTarget))}</div>` : ''}
+        </div>
+        <div class="imgcell">${s.image ? `<img src="${s.image}">` : '<div class="noimg">画像なし</div>'}</div>
+      </div>`;
+    });
+  }
+  html += '</div>';
+  html += '</div>';
+  return html;
+}
+function attachPreviewHandlers(){
+  document.querySelectorAll('.tabs [data-tab]').forEach(b=>b.onclick=()=>{ state.screen=b.getAttribute('data-tab'); render(); });
+  const printBtn = document.getElementById('btnPrint');
+  if(printBtn) printBtn.onclick = ()=> window.print();
+  const revBtn = document.getElementById('btnAddRevision');
+  if(revBtn) revBtn.onclick = ()=>{
+    appPrompt('今日の日付で改訂を記録します。変更内容を短くメモできます（空欄でも可）。', (note)=>{
+      updateManual(m=>{
+        (m.revisions = m.revisions||[]).push({ date: Date.now(), note: (note||'').trim() });
+      });
+    });
+  };
+}
+
+/* ---------------- flowchart SVG ---------------- */
+function renderFlowchartSVG(m){
+  const steps = m.steps;
+  if(steps.length===0) return '<div class="empty">手順が入力されていないため、フローチャートは表示されません。</div>';
+
+  const RECT_H = 50, RECT_MIN_W = 260, RECT_MAX_W = 520;
+  const DIA_H = 76, DIA_MIN_W = 260, DIA_MAX_W = 460;
+  const GAP = 28;
+  const START_H = 40, END_H = 40, TERMINAL_W = 140;
+  const CHAR_PX = 15.5, PAD_PX = 56; // rough per-character width budget used to size boxes to their text
+
+  // a box/diamond grows to fit its label (up to a max), so longer text doesn't get clipped
+  function fitWidth(label, minW, maxW){
+    const len = [...String(label)].length;
+    return Math.max(minW, Math.min(maxW, Math.round(len*CHAR_PX + PAD_PX)));
+  }
+  // hard safety cap on characters shown, sized to whatever the box's max width can actually fit
+  function maxCharsFor(maxW){ return Math.max(4, Math.floor((maxW-PAD_PX)/CHAR_PX)); }
+
+  // build node list: start, then per step [rect, (diamond)], then end
+  let nodes = [];
+  nodes.push({type:'terminal', id:'start', label:'開始', w:TERMINAL_W});
+  steps.forEach((s,i)=>{
+    const rectLabel = `${i+1}. ${s.itemName||'(未入力)'}`;
+    nodes.push({type:'rect', id:'step:'+i, label:rectLabel, stepIndex:i, w:fitWidth(rectLabel,RECT_MIN_W,RECT_MAX_W)});
+    if(s.branch.enabled){
+      const diaLabel = s.branch.question||'判定';
+      nodes.push({type:'diamond', id:'branch:'+i, label:diaLabel, stepIndex:i, w:fitWidth(diaLabel,DIA_MIN_W,DIA_MAX_W)});
+    }
+  });
+  nodes.push({type:'terminal', id:'end', label:'終了', w:TERMINAL_W});
+
+  // center chain based on the widest node plus room on both sides for YES/NO side-routing lanes
+  const maxHalfW = Math.max(...nodes.map(n=>n.w/2));
+  const laneBase = maxHalfW + 40;
+  const CX = laneBase + 120; // leaves room for at least ~2 side lanes before the left edge
+
+  // compute y positions
+  let y = 30;
+  const pos = {};
+  nodes.forEach(n=>{
+    const h = n.type==='rect'?RECT_H : n.type==='diamond'?DIA_H : START_H;
+    pos[n.id] = { cy: y + h/2, h, hw: n.w/2 };
+    y += h + GAP;
+  });
+  const totalHeight = y + 10;
+  const totalWidth = CX + laneBase + 120;
+
+  // resolve a branch target ('next'|'end'|'self'|'step:i') to a node id in `nodes`
+  function resolveTarget(fromStepIndex, target){
+    if(target === 'end') return 'end';
+    if(target === 'self') return 'branch:'+fromStepIndex;
+    if(target === 'next'){
+      const nextIdx = fromStepIndex+1;
+      return nextIdx < steps.length ? 'step:'+nextIdx : 'end';
+    }
+    const m2 = String(target).match(/^step:(\d+)$/);
+    if(m2) return 'step:'+m2[1];
+    return 'end';
+  }
+
+  let svgParts = [];
+  function esc(t){ return escapeHtml(t); }
+
+  // draw nodes (each sized to its own text via pos[n.id].hw, computed above)
+  nodes.forEach(n=>{
+    const cy = pos[n.id].cy;
+    const hw = pos[n.id].hw;
+    if(n.type==='terminal'){
+      svgParts.push(`<rect x="${CX-hw}" y="${cy-START_H/2}" width="${hw*2}" height="${START_H}" rx="20" fill="${n.id==='start'?'#2b6cb0':'#555'}" />`);
+      svgParts.push(`<text x="${CX}" y="${cy+5}" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">${esc(n.label)}</text>`);
+    } else if(n.type==='rect'){
+      svgParts.push(`<rect x="${CX-hw}" y="${cy-RECT_H/2}" width="${hw*2}" height="${RECT_H}" rx="6" fill="#fff" stroke="#1b3a5c" stroke-width="1.5"/>`);
+      svgParts.push(`<text x="${CX}" y="${cy+5}" text-anchor="middle" fill="#1b3a5c" font-size="14" font-weight="600">${esc(truncate(n.label,maxCharsFor(RECT_MAX_W)))}</text>`);
+    } else if(n.type==='diamond'){
+      const hh=DIA_H/2;
+      svgParts.push(`<polygon points="${CX},${cy-hh} ${CX+hw},${cy} ${CX},${cy+hh} ${CX-hw},${cy}" fill="#fff8e6" stroke="#b7791f" stroke-width="1.5"/>`);
+      svgParts.push(`<text x="${CX}" y="${cy+5}" text-anchor="middle" fill="#7c5a10" font-size="13" font-weight="600">${esc(truncate(n.label,maxCharsFor(DIA_MAX_W)))}</text>`);
+    }
+  });
+
+  // straight default chain arrows (start->first, rect->diamond same step, and non-branch rect->next)
+  for(let i=0;i<nodes.length-1;i++){
+    const a = nodes[i], b = nodes[i+1];
+    if(a.type==='diamond'){
+      // only draw the straight default arrow when this diamond's YES path actually continues to the natural next node;
+      // otherwise the explicit YES/NO edge-drawing below handles it (and would otherwise leave YES undrawn).
+      const step = steps[a.stepIndex];
+      const yesId = resolveTarget(a.stepIndex, step.branch.yesTarget);
+      if(yesId !== b.id) continue;
+      const y1b = pos[a.id].cy + pos[a.id].h/2;
+      const y2b = pos[b.id].cy - pos[b.id].h/2;
+      svgParts.push(arrowV(CX, y1b, CX, y2b));
+      svgParts.push(`<text x="${CX+8}" y="${(y1b+y2b)/2}" font-size="11" font-weight="700" fill="#2b6cb0">YES</text>`);
+      continue;
+    }
+    const y1 = pos[a.id].cy + pos[a.id].h/2;
+    const y2 = pos[b.id].cy - pos[b.id].h/2;
+    svgParts.push(arrowV(CX, y1, CX, y2));
+  }
+
+  // explicit YES/NO edges from diamonds
+  const usedSides = {}; // track offset lanes to avoid overlap
+  let laneRight = 0, laneLeft = 0;
+  nodes.forEach(n=>{
+    if(n.type!=='diamond') return;
+    const si = n.stepIndex;
+    const step = steps[si];
+    const cy = pos[n.id].cy;
+    ['yesTarget','noTarget'].forEach(key=>{
+      const label = key==='yesTarget'?'YES':'NO';
+      const targetVal = step.branch[key];
+      const targetId = resolveTarget(si, targetVal);
+      // if it's simply the natural next node in sequence AND it's YES, already drawn as straight chain -> skip
+      const naturalNextId = nodes[nodes.indexOf(n)+1] ? nodes[nodes.indexOf(n)+1].id : null;
+      if(label==='YES' && targetId === naturalNextId){
+        return; // already drawn straight
+      }
+      const targetCy = pos[targetId] ? pos[targetId].cy : null;
+      if(targetCy===null) return;
+      const goingUp = targetCy < cy;
+      const side = label==='YES' ? 1 : -1; // YES routes right, NO routes left
+      const laneOffset = (side>0 ? (laneBase + laneRight*40) : (laneBase + laneLeft*40));
+      if(side>0) laneRight++; else laneLeft++;
+      const x1 = CX + side*pos[n.id].hw;
+      const xMid = CX + side*laneOffset;
+      const x3 = CX + side*pos[targetId].hw;
+      svgParts.push(pathElbow(x1, cy, xMid, targetCy, x3, targetCy, label, side));
+    });
+  });
+
+  function arrowV(x1,y1,x2,y2){
+    return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2-6}" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)"/>`;
+  }
+  function pathElbow(x1,y1,xMid,y2,x3,y3,label,side){
+    // path: from (x1,y1) go horizontally to xMid, then vertically to y2, then horizontally to x3,y3 with arrowhead
+    const d = `M ${x1} ${y1} L ${xMid} ${y1} L ${xMid} ${y2} L ${x3+ (side>0?6:-6)} ${y2}`;
+    const labelX = xMid + (side>0?6:-6);
+    const labelY = (y1+y2)/2;
+    return `<path d="${d}" fill="none" stroke="${side>0?'#2b6cb0':'#c0392b'}" stroke-width="1.5" marker-end="url(${side>0?'#arrowBlue':'#arrowRed'})"/>` +
+      `<text x="${labelX}" y="${labelY}" text-anchor="${side>0?'start':'end'}" font-size="11" font-weight="700" fill="${side>0?'#2b6cb0':'#c0392b'}">${label}</text>`;
+  }
+
+  const defs = `<defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#333"/></marker>
+    <marker id="arrowBlue" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#2b6cb0"/></marker>
+    <marker id="arrowRed" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#c0392b"/></marker>
+  </defs>`;
+
+  return `<svg viewBox="0 0 ${totalWidth} ${totalHeight}" width="100%" style="max-width:${totalWidth}px; height:auto; display:block; margin:0 auto;">${defs}${svgParts.join('')}</svg>`;
+}
+function truncate(s,n){ s=String(s); return s.length>n ? s.slice(0,n-1)+'…' : s; }
+
+/* ---------------- custom confirm dialog (works without native window.confirm) ---------------- */
+function appConfirm(message, onYes){
+  const root = document.createElement('div');
+  root.className = 'modal-overlay';
+  root.style.zIndex = '100';
+  root.innerHTML = `<div class="modal" style="max-width:360px;">
+    <p style="margin:0 0 20px; font-size:14px;">${escapeHtml(message)}</p>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="appConfirmNo">キャンセル</button>
+      <button class="btn-danger" id="appConfirmYes">削除する</button>
+    </div>
+  </div>`;
+  document.body.appendChild(root);
+  const cleanup = ()=> root.remove();
+  root.querySelector('#appConfirmNo').onclick = cleanup;
+  root.addEventListener('click', (e)=>{ if(e.target === root) cleanup(); });
+  root.querySelector('#appConfirmYes').onclick = ()=>{ cleanup(); onYes(); };
+}
+
+function appPrompt(message, onSubmit){
+  const root = document.createElement('div');
+  root.className = 'modal-overlay';
+  root.style.zIndex = '100';
+  root.innerHTML = `<div class="modal" style="max-width:360px;">
+    <p style="margin:0 0 10px; font-size:14px;">${escapeHtml(message)}</p>
+    <input type="text" id="appPromptInput" placeholder="例）備品リストを更新" style="margin-bottom:16px;">
+    <div class="modal-actions">
+      <button class="btn-secondary" id="appPromptCancel">キャンセル</button>
+      <button class="btn-primary" id="appPromptOk">記録する</button>
+    </div>
+  </div>`;
+  document.body.appendChild(root);
+  const cleanup = ()=> root.remove();
+  const input = root.querySelector('#appPromptInput');
+  root.querySelector('#appPromptCancel').onclick = cleanup;
+  root.addEventListener('click', (e)=>{ if(e.target === root) cleanup(); });
+  root.querySelector('#appPromptOk').onclick = ()=>{ const v = input.value; cleanup(); onSubmit(v); };
+  setTimeout(()=>input.focus(), 0);
+}
+
+/* ---------------- utils ---------------- */
+function escapeHtml(str){
+  return String(str==null?'':str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+}
+function attr(str){ return escapeHtml(str); }
+
+/* ---------------- init ---------------- */
+// re-attach step modal handlers whenever steps screen re-renders with modal open
+const _origRender = render;
+render = function(){
+  _origRender();
+  if(state.editingStepIndex !== undefined && state.editingStepIndex !== null && document.getElementById('modalOverlay')){
+    attachStepModalHandlers();
+  }
+};
+render();
+</script>
+</body>
+</html>
