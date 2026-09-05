@@ -138,6 +138,23 @@
   }
   .app-toast.show{ opacity:1; transform:translate(-50%,0); }
   .app-toast.app-toast-error{ background:#c0392b; }
+  @media (max-width:640px){
+    main{padding:16px 10px 60px;}
+    .sheet{padding:16px 12px;}
+    .grid2, .grid3{grid-template-columns:1fr;}
+    table.meta-table, table.meta-table tbody, table.meta-table tr, table.meta-table th, table.meta-table td{
+      display:block; width:auto !important;
+    }
+    table.meta-table tr{margin-bottom:2px;}
+    table.meta-table th{border-bottom:none; padding-bottom:4px;}
+    table.meta-table td{border-top:none; padding-top:4px; padding-bottom:12px;}
+    .step-block{flex-direction:column;}
+    .step-block .side{width:100%; height:34px;}
+    .step-block .imgcell{width:auto; border-left:none; border-top:1px solid var(--border);}
+    .tabs button{padding:10px 10px; font-size:13px;}
+    header.appbar h1{font-size:15px;}
+    header.appbar .sub{font-size:11px;}
+  }
   @media print{
     header.appbar, .toolbar, .print-actions, .tabs{display:none !important;}
     body{background:#fff;}
