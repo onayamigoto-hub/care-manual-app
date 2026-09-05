@@ -130,6 +130,14 @@
   .precautions-box .precautions-label{font-size:13px; font-weight:700; color:#8a5a00; margin-bottom:6px;}
   .precautions-box .precautions-text{font-size:13px; color:#333; line-height:1.6; white-space:pre-wrap;}
   .page-break{ break-before:page; page-break-before:always; }
+  .app-toast{
+    position:fixed; left:50%; bottom:28px; transform:translate(-50%,20px);
+    background:#1b3a5c; color:#fff; padding:12px 20px; border-radius:8px; font-size:13px;
+    box-shadow:0 4px 16px rgba(0,0,0,.2); z-index:200; opacity:0; transition:opacity .25s, transform .25s;
+    max-width:80vw; text-align:center;
+  }
+  .app-toast.show{ opacity:1; transform:translate(-50%,0); }
+  .app-toast.app-toast-error{ background:#c0392b; }
   @media print{
     header.appbar, .toolbar, .print-actions, .tabs{display:none !important;}
     body{background:#fff;}
@@ -369,9 +377,9 @@ function attachListHandlers(){
         const existing = loadManuals();
         const merged = existing.concat(incoming.filter(im=>!existing.some(ex=>ex.id===im.id)));
         saveManuals(merged);
-        alert('読み込みました。');
         render();
-      }catch(err){ alert('読み込みに失敗しました: '+err.message); }
+        appToast('読み込みました。');
+      }catch(err){ appToast('読み込みに失敗しました: '+err.message, {error:true, duration:5000}); }
     };
     reader.readAsText(file);
   };
@@ -697,7 +705,7 @@ function attachStepModalHandlers(){
   document.getElementById('btnCancelStep').onclick = ()=> closeStepModal();
   document.getElementById('btnSaveStep').onclick = ()=>{
     const s = state.tempStep;
-    if(!s.itemName.trim()){ alert('項目名を入力してください。'); return; }
+    if(!s.itemName.trim()){ appToast('項目名を入力してください。', {error:true}); return; }
     const idx = state.editingStepIndex;
     updateManual(m=>{
       if(idx === -1){ m.steps.push(s); }
@@ -966,6 +974,21 @@ function appPrompt(message, onSubmit){
   root.addEventListener('click', (e)=>{ if(e.target === root) cleanup(); });
   root.querySelector('#appPromptOk').onclick = ()=>{ const v = input.value; cleanup(); onSubmit(v); };
   setTimeout(()=>input.focus(), 0);
+}
+
+// non-blocking replacement for window.alert() — native alert() can hang the page in some browser/webview contexts
+function appToast(message, opts){
+  opts = opts || {};
+  document.querySelectorAll('.app-toast').forEach(el=>el.remove());
+  const el = document.createElement('div');
+  el.className = 'app-toast' + (opts.error ? ' app-toast-error' : '');
+  el.textContent = message;
+  document.body.appendChild(el);
+  requestAnimationFrame(()=> el.classList.add('show'));
+  setTimeout(()=>{
+    el.classList.remove('show');
+    setTimeout(()=> el.remove(), 300);
+  }, opts.duration || 3000);
 }
 
 /* ---------------- utils ---------------- */
