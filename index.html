@@ -739,6 +739,7 @@ function attachStepModalHandlers(){
 function renderPreview(m){
   let html = `<div class="print-actions">
     <button class="btn-primary" id="btnPrint">印刷 / PDF保存</button>
+    <button class="btn-secondary" id="btnExportWord">Wordで保存</button>
     <button class="btn-secondary" id="btnAddRevision">＋改訂を記録する</button>
   </div>`;
   html += '<div class="sheet" id="printSheet">';
@@ -791,6 +792,11 @@ function attachPreviewHandlers(){
   document.querySelectorAll('.tabs [data-tab]').forEach(b=>b.onclick=()=>{ state.screen=b.getAttribute('data-tab'); render(); });
   const printBtn = document.getElementById('btnPrint');
   if(printBtn) printBtn.onclick = ()=> window.print();
+  const wordBtn = document.getElementById('btnExportWord');
+  if(wordBtn) wordBtn.onclick = ()=>{
+    wordBtn.disabled = true;
+    exportWordDoc(currentManual()).finally(()=>{ wordBtn.disabled = false; });
+  };
   const revBtn = document.getElementById('btnAddRevision');
   if(revBtn) revBtn.onclick = ()=>{
     appPrompt('今日の日付で改訂を記録します。変更内容を短くメモできます（空欄でも可）。', (note)=>{
@@ -953,6 +959,104 @@ function renderFlowchartSVG(m){
   return `<svg viewBox="0 0 ${totalWidth} ${totalHeight}" width="100%" style="max-width:${totalWidth}px; height:auto; display:block; margin:0 auto;">${defs}${svgParts.join('')}</svg>`;
 }
 function truncate(s,n){ s=String(s); return s.length>n ? s.slice(0,n-1)+'…' : s; }
+
+/* ---------------- Word (.doc) export ---------------- */
+// rasterize the on-screen flowchart SVG to a PNG data URI so Word (which has no real SVG support) can display it
+function svgElementToPngDataUrl(svgEl, scale){
+  return new Promise((resolve, reject)=>{
+    const svgString = new XMLSerializer().serializeToString(svgEl);
+    const viewBox = svgEl.getAttribute('viewBox');
+    let w = 800, h = 600;
+    if(viewBox){
+      const parts = viewBox.split(' ').map(Number);
+      w = parts[2]; h = parts[3];
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(w*scale); canvas.height = Math.round(h*scale);
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0,0,canvas.width, canvas.height);
+    const img = new Image();
+    const svgBlob = new Blob([svgString], {type:'image/svg+xml;charset=utf-8'});
+    const url = URL.createObjectURL(svgBlob);
+    img.onload = ()=>{
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(url);
+      resolve(canvas.toDataURL('image/png'));
+    };
+    img.onerror = (e)=>{ URL.revokeObjectURL(url); reject(e); };
+    img.src = url;
+  });
+}
+function buildWordHtml(m, flowImgTag){
+  const stepsHtml = m.steps.map((s,i)=>{
+    const bullets = s.procedureLines.filter(l=>l.trim()).map(l=>`<li>${escapeHtml(l)}</li>`).join('') || '<li>(作業手順未入力)</li>';
+    const branchHtml = s.branch.enabled
+      ? `<p style="color:#2b6cb0;font-size:11px;margin:6px 0 0;">分岐:「${escapeHtml(s.branch.question||'(条件未入力)')}」 → YES: ${escapeHtml(stepTargetLabel(m,s.branch.yesTarget))} ／ NO: ${escapeHtml(stepTargetLabel(m,s.branch.noTarget))}</p>`
+      : '';
+    const imgCell = s.image ? `<img src="${s.image}" style="max-width:140px;max-height:120px;">` : '<span style="color:#999;font-size:11px;">画像なし</span>';
+    return `<table style="width:100%;border:1px solid #d9dee3;border-collapse:collapse;margin-bottom:14px;">
+      <tr>
+        <td style="width:40px;background:#1b3a5c;color:#ffffff;font-size:18px;font-weight:bold;text-align:center;vertical-align:middle;">${i+1}</td>
+        <td style="padding:10px 14px;vertical-align:top;">
+          <p style="margin:0 0 6px;font-weight:bold;font-size:13px;">${escapeHtml(s.itemName||'(未入力)')} ${s.timeEstimate?`<span style="font-weight:normal;font-size:11px;color:#666;">(目安 ${escapeHtml(s.timeEstimate)})</span>`:''}</p>
+          <ul style="margin:0;padding-left:18px;font-size:12px;">${bullets}</ul>
+          ${branchHtml}
+        </td>
+        <td style="width:150px;text-align:center;vertical-align:middle;background:#fafafa;border-left:1px solid #d9dee3;">${imgCell}</td>
+      </tr>
+    </table>`;
+  }).join('');
+  const revs = (m.revisions||[]).slice().sort((a,b)=>a.date-b.date);
+  const revText = revs.length ? ' ｜ 改訂履歴: ' + revs.map(r=>`${fmtDate(r.date)}${r.note?'（'+escapeHtml(r.note)+'）':''}`).join('、') : '';
+  return `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="utf-8">
+<title>${escapeHtml(m.basic.title||'手順書')}</title>
+<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom><w:DoNotOptimizeForBrowser/></w:WordDocument></xml><![endif]-->
+</head>
+<body style="font-family:'游ゴシック','Yu Gothic','メイリオ',sans-serif;font-size:13px;color:#222;">
+  <h1 style="background:#1b3a5c;color:#ffffff;padding:10px 14px;font-size:20px;margin:0 0 16px;">${m.basic.category?'【'+escapeHtml(m.basic.category)+'】':''}${escapeHtml(m.basic.title||'(タイトル未入力)')}</h1>
+  <table style="width:100%;border-collapse:collapse;margin-bottom:16px;">
+    <tr><th style="background:#eef3f8;color:#1b3a5c;border:1px solid #d9dee3;padding:6px 10px;text-align:left;width:120px;font-size:12px;">事業所</th><td style="border:1px solid #d9dee3;padding:6px 10px;font-size:12px;" colspan="3">${escapeHtml(m.basic.facility)}</td></tr>
+    <tr><th style="background:#eef3f8;color:#1b3a5c;border:1px solid #d9dee3;padding:6px 10px;text-align:left;width:120px;font-size:12px;">対象職種</th><td style="border:1px solid #d9dee3;padding:6px 10px;font-size:12px;">${escapeHtml(m.basic.jobRole)}</td><th style="background:#eef3f8;color:#1b3a5c;border:1px solid #d9dee3;padding:6px 10px;text-align:left;width:120px;font-size:12px;">対象者・範囲</th><td style="border:1px solid #d9dee3;padding:6px 10px;font-size:12px;">${escapeHtml(m.basic.target)}</td></tr>
+    <tr><th style="background:#eef3f8;color:#1b3a5c;border:1px solid #d9dee3;padding:6px 10px;text-align:left;width:120px;font-size:12px;">目的（利用者視点）</th><td style="border:1px solid #d9dee3;padding:6px 10px;font-size:12px;" colspan="3">${escapeHtml(m.basic.purposeUser).replace(/\n/g,'<br>')}</td></tr>
+    <tr><th style="background:#eef3f8;color:#1b3a5c;border:1px solid #d9dee3;padding:6px 10px;text-align:left;width:120px;font-size:12px;">目的（スタッフ視点）</th><td style="border:1px solid #d9dee3;padding:6px 10px;font-size:12px;" colspan="3">${escapeHtml(m.basic.purposeStaff).replace(/\n/g,'<br>')}</td></tr>
+    <tr><th style="background:#eef3f8;color:#1b3a5c;border:1px solid #d9dee3;padding:6px 10px;text-align:left;width:120px;font-size:12px;">完了期限</th><td style="border:1px solid #d9dee3;padding:6px 10px;font-size:12px;">${escapeHtml(m.basic.deadline)}</td><th style="background:#eef3f8;color:#1b3a5c;border:1px solid #d9dee3;padding:6px 10px;text-align:left;width:120px;font-size:12px;">完了時の状態</th><td style="border:1px solid #d9dee3;padding:6px 10px;font-size:12px;">${escapeHtml(m.basic.completionState)}</td></tr>
+    <tr><th style="background:#eef3f8;color:#1b3a5c;border:1px solid #d9dee3;padding:6px 10px;text-align:left;width:120px;font-size:12px;">所要時間目安</th><td style="border:1px solid #d9dee3;padding:6px 10px;font-size:12px;" colspan="3">${escapeHtml(m.basic.totalTime)}</td></tr>
+  </table>
+  ${m.basic.precautions && m.basic.precautions.trim() ? `<div style="border:1px solid #f0c36d;background:#fffaf0;padding:10px 14px;margin-bottom:16px;"><div style="color:#8a5a00;font-weight:bold;font-size:12px;margin-bottom:4px;">⚠ 注意事項・心得</div><div style="font-size:12px;">${escapeHtml(m.basic.precautions).replace(/\n/g,'<br>')}</div></div>` : ''}
+  <div style="border:1px dashed #d9dee3;padding:10px 14px;margin-bottom:16px;min-height:120px;"><div style="color:#666;font-weight:bold;font-size:11px;margin-bottom:6px;">メモ・備考欄</div></div>
+  <div style="font-size:10px;color:#666;border-top:1px solid #d9dee3;padding-top:6px;margin-bottom:16px;">作成日: ${fmtDate(m.createdAt)}${revText}</div>
+  <h3 style="color:#1b3a5c;font-size:13px;margin:0 0 8px;">ワークフロー</h3>
+  <p>${flowImgTag}</p>
+  <h3 style="color:#1b3a5c;font-size:13px;margin:18px 0 8px;">作業手順</h3>
+  ${stepsHtml || '<p>手順が入力されていません。</p>'}
+</body>
+</html>`;
+}
+async function exportWordDoc(m){
+  if(!m) return;
+  let flowImgTag = '<span style="color:#999;">(手順が入力されていないためワークフロー図はありません)</span>';
+  const svgEl = document.querySelector('.flow-wrap svg');
+  if(svgEl){
+    try{
+      const pngDataUrl = await svgElementToPngDataUrl(svgEl, 2);
+      flowImgTag = `<img src="${pngDataUrl}" style="max-width:700px;width:100%;">`;
+    }catch(e){
+      flowImgTag = '<span style="color:#c0392b;">(ワークフロー図の変換に失敗しました)</span>';
+    }
+  }
+  const html = buildWordHtml(m, flowImgTag);
+  const blob = new Blob(['﻿', html], {type:'application/msword'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const safeTitle = (m.basic.title || '手順書').replace(/[\\/:*?"<>|]/g,'_');
+  a.href = url; a.download = safeTitle + '.doc';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=> URL.revokeObjectURL(url), 3000);
+  appToast('Wordファイルを保存しました。');
+}
 
 /* ---------------- custom confirm dialog (works without native window.confirm) ---------------- */
 function appConfirm(message, onYes){
