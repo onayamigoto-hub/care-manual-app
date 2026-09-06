@@ -988,6 +988,25 @@ function svgElementToPngDataUrl(svgEl, scale){
     img.src = url;
   });
 }
+// Word has no real SVG support in <img>, so any svg data-uri step image must be rasterized to PNG first,
+// otherwise Word's HTML importer can choke on it and produce huge blank areas / one-step-per-page pagination.
+function imageToPngDataUrlIfSvg(dataUri, targetW, targetH){
+  if(!dataUri || !dataUri.startsWith('data:image/svg+xml')) return Promise.resolve(dataUri);
+  return new Promise((resolve)=>{
+    const canvas = document.createElement('canvas');
+    canvas.width = targetW; canvas.height = targetH;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0,0,canvas.width, canvas.height);
+    const img = new Image();
+    img.onload = ()=>{
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL('image/png'));
+    };
+    img.onerror = ()=> resolve(null); // fall back to "no image" rather than breaking the whole export
+    img.src = dataUri;
+  });
+}
 function buildWordHtml(m, flowImgTag){
   const stepsHtml = m.steps.map((s,i)=>{
     const bullets = s.procedureLines.filter(l=>l.trim()).map(l=>`<li>${escapeHtml(l)}</li>`).join('') || '<li>(作業手順未入力)</li>';
@@ -1026,7 +1045,7 @@ function buildWordHtml(m, flowImgTag){
     <tr><th style="background:#eef3f8;color:#1b3a5c;border:1px solid #d9dee3;padding:6px 10px;text-align:left;width:120px;font-size:12px;">所要時間目安</th><td style="border:1px solid #d9dee3;padding:6px 10px;font-size:12px;" colspan="3">${escapeHtml(m.basic.totalTime)}</td></tr>
   </table>
   ${m.basic.precautions && m.basic.precautions.trim() ? `<div style="border:1px solid #f0c36d;background:#fffaf0;padding:10px 14px;margin-bottom:16px;"><div style="color:#8a5a00;font-weight:bold;font-size:12px;margin-bottom:4px;">⚠ 注意事項・心得</div><div style="font-size:12px;">${escapeHtml(m.basic.precautions).replace(/\n/g,'<br>')}</div></div>` : ''}
-  <div style="border:1px dashed #d9dee3;padding:10px 14px;margin-bottom:16px;min-height:120px;"><div style="color:#666;font-weight:bold;font-size:11px;margin-bottom:6px;">メモ・備考欄</div></div>
+  <div style="border:1px dashed #d9dee3;padding:10px 14px;margin-bottom:16px;min-height:70px;"><div style="color:#666;font-weight:bold;font-size:11px;margin-bottom:6px;">メモ・備考欄</div></div>
   <div style="font-size:10px;color:#666;border-top:1px solid #d9dee3;padding-top:6px;margin-bottom:16px;">作成日: ${fmtDate(m.createdAt)}${revText}</div>
   <div style="page-break-before:always;">
     <h3 style="color:#1b3a5c;font-size:13px;margin:0 0 8px;">ワークフロー</h3>
@@ -1057,7 +1076,12 @@ async function exportWordDoc(m){
       flowImgTag = '<span style="color:#c0392b;">(ワークフロー図の変換に失敗しました)</span>';
     }
   }
-  const html = buildWordHtml(m, flowImgTag);
+  // rasterize any SVG step images (e.g. the icon placeholders) to PNG — Word cannot render svg data-uris
+  const mForWord = JSON.parse(JSON.stringify(m));
+  await Promise.all(mForWord.steps.map(async (s)=>{
+    s.image = await imageToPngDataUrlIfSvg(s.image, 280, 210);
+  }));
+  const html = buildWordHtml(mForWord, flowImgTag);
   const blob = new Blob(['﻿', html], {type:'application/msword'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
