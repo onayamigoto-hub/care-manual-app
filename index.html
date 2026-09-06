@@ -1028,10 +1028,14 @@ function buildWordHtml(m, flowImgTag){
   ${m.basic.precautions && m.basic.precautions.trim() ? `<div style="border:1px solid #f0c36d;background:#fffaf0;padding:10px 14px;margin-bottom:16px;"><div style="color:#8a5a00;font-weight:bold;font-size:12px;margin-bottom:4px;">⚠ 注意事項・心得</div><div style="font-size:12px;">${escapeHtml(m.basic.precautions).replace(/\n/g,'<br>')}</div></div>` : ''}
   <div style="border:1px dashed #d9dee3;padding:10px 14px;margin-bottom:16px;min-height:120px;"><div style="color:#666;font-weight:bold;font-size:11px;margin-bottom:6px;">メモ・備考欄</div></div>
   <div style="font-size:10px;color:#666;border-top:1px solid #d9dee3;padding-top:6px;margin-bottom:16px;">作成日: ${fmtDate(m.createdAt)}${revText}</div>
-  <h3 style="color:#1b3a5c;font-size:13px;margin:0 0 8px;">ワークフロー</h3>
-  <p>${flowImgTag}</p>
-  <h3 style="color:#1b3a5c;font-size:13px;margin:18px 0 8px;">作業手順</h3>
-  ${stepsHtml || '<p>手順が入力されていません。</p>'}
+  <div style="page-break-before:always;">
+    <h3 style="color:#1b3a5c;font-size:13px;margin:0 0 8px;">ワークフロー</h3>
+    <p style="text-align:center;margin:0;">${flowImgTag}</p>
+  </div>
+  <div style="page-break-before:always;">
+    <h3 style="color:#1b3a5c;font-size:13px;margin:0 0 8px;">作業手順</h3>
+    ${stepsHtml || '<p>手順が入力されていません。</p>'}
+  </div>
 </body>
 </html>`;
 }
@@ -1042,7 +1046,13 @@ async function exportWordDoc(m){
   if(svgEl){
     try{
       const pngDataUrl = await svgElementToPngDataUrl(svgEl, 2);
-      flowImgTag = `<img src="${pngDataUrl}" style="max-width:700px;width:100%;">`;
+      // size the image in physical units (cm) so it fills a normal A4 page on its own, without the user having to resize it
+      const viewBox = (svgEl.getAttribute('viewBox')||'0 0 800 600').split(' ').map(Number);
+      const aspect = viewBox[2] / viewBox[3];
+      const MAX_W_CM = 16, MAX_H_CM = 23; // A4 portrait minus typical margins and heading space
+      let wCm = MAX_W_CM, hCm = wCm / aspect;
+      if(hCm > MAX_H_CM){ hCm = MAX_H_CM; wCm = hCm * aspect; }
+      flowImgTag = `<img src="${pngDataUrl}" style="width:${wCm.toFixed(1)}cm;height:${hCm.toFixed(1)}cm;">`;
     }catch(e){
       flowImgTag = '<span style="color:#c0392b;">(ワークフロー図の変換に失敗しました)</span>';
     }
