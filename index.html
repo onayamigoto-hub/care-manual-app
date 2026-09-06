@@ -1064,9 +1064,11 @@ function buildWordHtml(m, flowImgTag){
     <tr><th style="background:#eef3f8;color:#1b3a5c;border:1px solid #d9dee3;padding:5pt 8pt;text-align:left;width:100pt;">完了期限</th><td style="border:1px solid #d9dee3;padding:5pt 8pt;">${escapeHtml(m.basic.deadline)}</td><th style="background:#eef3f8;color:#1b3a5c;border:1px solid #d9dee3;padding:5pt 8pt;text-align:left;width:100pt;">完了時の状態</th><td style="border:1px solid #d9dee3;padding:5pt 8pt;">${escapeHtml(m.basic.completionState)}</td></tr>
     <tr><th style="background:#eef3f8;color:#1b3a5c;border:1px solid #d9dee3;padding:5pt 8pt;text-align:left;width:100pt;">所要時間目安</th><td style="border:1px solid #d9dee3;padding:5pt 8pt;" colspan="3">${escapeHtml(m.basic.totalTime)}</td></tr>
   </table>
-  ${m.basic.precautions && m.basic.precautions.trim() ? `<div style="border:1px solid #f0c36d;background:#fffaf0;padding:8pt 10pt;margin-bottom:12pt;font-size:11pt;"><div style="color:#8a5a00;font-weight:bold;margin-bottom:3pt;">⚠ 注意事項・心得</div><div>${escapeHtml(m.basic.precautions).replace(/\n/g,'<br>')}</div></div>` : ''}
-  <div style="border:1px dashed #d9dee3;padding:8pt 10pt;margin-bottom:12pt;min-height:50pt;font-size:11pt;"><div style="color:#666;font-weight:bold;margin-bottom:4pt;">メモ・備考欄</div></div>
-  <div style="font-size:9pt;color:#666;border-top:1px solid #d9dee3;padding-top:5pt;margin-bottom:12pt;">作成日: ${fmtDate(m.createdAt)}${revText}</div>
+  <p style="margin:0;font-size:1pt;line-height:14pt;">&nbsp;</p>
+  ${m.basic.precautions && m.basic.precautions.trim() ? `<div style="border:1px solid #f0c36d;background:#fffaf0;padding:8pt 10pt;font-size:11pt;"><div style="color:#8a5a00;font-weight:bold;margin-bottom:3pt;">⚠ 注意事項・心得</div><div>${escapeHtml(m.basic.precautions).replace(/\n/g,'<br>')}</div></div><p style="margin:0;font-size:1pt;line-height:14pt;">&nbsp;</p>` : ''}
+  <div style="border:1px dashed #d9dee3;padding:8pt 10pt;min-height:50pt;font-size:11pt;"><div style="color:#666;font-weight:bold;margin-bottom:4pt;">メモ・備考欄</div></div>
+  <p style="margin:0;font-size:1pt;line-height:14pt;">&nbsp;</p>
+  <div style="font-size:9pt;color:#666;border-top:1px solid #d9dee3;padding-top:5pt;">作成日: ${fmtDate(m.createdAt)}${revText}</div>
   <p style="page-break-before:always;mso-page-break-before:always;margin:0;">&nbsp;</p>
   <h3 style="color:#1b3a5c;font-size:13pt;margin:0 0 8pt;">ワークフロー</h3>
   <p style="text-align:center;margin:0;">${flowImgTag}</p>
