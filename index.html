@@ -1008,7 +1008,11 @@ function imageToPngDataUrlIfSvg(dataUri, targetW, targetH){
   });
 }
 function buildWordHtml(m, flowImgTag){
-  const stepsHtml = m.steps.map((s,i)=>{
+  // all steps live as rows of ONE table (not N separate <table> elements) — Word's HTML-to-doc filter was
+  // inserting a full unwanted page break between each separate top-level <table>, one page per step.
+  // Rows of a single table wrap across pages normally, without that per-table break behavior.
+  const NUM_W = 40, IMG_W = 150, TABLE_W = 600, TEXT_W = TABLE_W - NUM_W - IMG_W;
+  const stepRows = m.steps.map((s,i)=>{
     const bullets = s.procedureLines.filter(l=>l.trim()).map(l=>`<li>${escapeHtml(l)}</li>`).join('') || '<li>(作業手順未入力)</li>';
     const branchHtml = s.branch.enabled
       ? `<p style="color:#2b6cb0;font-size:10pt;margin:5pt 0 0;">分岐:「${escapeHtml(s.branch.question||'(条件未入力)')}」 → YES: ${escapeHtml(stepTargetLabel(m,s.branch.yesTarget))} ／ NO: ${escapeHtml(stepTargetLabel(m,s.branch.noTarget))}</p>`
@@ -1016,22 +1020,20 @@ function buildWordHtml(m, flowImgTag){
     // width/height set as real HTML attributes (not just CSS) — Word's HTML-to-doc filter often ignores
     // max-width/max-height in style and instead renders the image at its native pixel size otherwise.
     const imgCell = s.image ? `<img src="${s.image}" width="120" height="90" style="width:120px;height:90px;">` : '<span style="color:#999;font-size:10pt;">画像なし</span>';
-    // fixed pixel widths on the table AND every cell (as HTML attributes, not just CSS %) — Word's HTML-to-doc
-    // filter can badly miscalculate row/page height when a table mixes percentage and pixel widths, which was
-    // producing one giant blank page per step.
-    const NUM_W = 40, IMG_W = 150, TABLE_W = 600, TEXT_W = TABLE_W - NUM_W - IMG_W;
-    return `<table width="${TABLE_W}" cellpadding="0" cellspacing="0" border="1" style="border-collapse:collapse;border-color:#d9dee3;margin-bottom:12pt;">
-      <tr>
-        <td width="${NUM_W}" style="background:#1b3a5c;color:#ffffff;font-size:14pt;font-weight:bold;text-align:center;vertical-align:middle;">${i+1}</td>
-        <td width="${TEXT_W}" style="padding:8pt 10pt;vertical-align:top;font-size:11pt;">
+    const spacerRow = i>0 ? `<tr><td colspan="3" style="height:10pt;border:none;"></td></tr>` : '';
+    return `${spacerRow}<tr>
+        <td width="${NUM_W}" style="background:#1b3a5c;color:#ffffff;font-size:14pt;font-weight:bold;text-align:center;vertical-align:middle;border:1px solid #d9dee3;">${i+1}</td>
+        <td width="${TEXT_W}" style="padding:8pt 10pt;vertical-align:top;font-size:11pt;border:1px solid #d9dee3;">
           <p style="margin:0 0 5pt;font-weight:bold;">${escapeHtml(s.itemName||'(未入力)')} ${s.timeEstimate?`<span style="font-weight:normal;font-size:10pt;color:#666;">(目安 ${escapeHtml(s.timeEstimate)})</span>`:''}</p>
           <ul style="margin:0;padding-left:16pt;">${bullets}</ul>
           ${branchHtml}
         </td>
-        <td width="${IMG_W}" style="text-align:center;vertical-align:middle;background:#fafafa;">${imgCell}</td>
-      </tr>
-    </table>`;
+        <td width="${IMG_W}" style="text-align:center;vertical-align:middle;background:#fafafa;border:1px solid #d9dee3;">${imgCell}</td>
+      </tr>`;
   }).join('');
+  const stepsHtml = m.steps.length
+    ? `<table width="${TABLE_W}" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">${stepRows}</table>`
+    : '';
   const revs = (m.revisions||[]).slice().sort((a,b)=>a.date-b.date);
   const revText = revs.length ? ' ｜ 改訂履歴: ' + revs.map(r=>`${fmtDate(r.date)}${r.note?'（'+escapeHtml(r.note)+'）':''}`).join('、') : '';
   return `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
@@ -1065,14 +1067,12 @@ function buildWordHtml(m, flowImgTag){
   ${m.basic.precautions && m.basic.precautions.trim() ? `<div style="border:1px solid #f0c36d;background:#fffaf0;padding:8pt 10pt;margin-bottom:12pt;font-size:11pt;"><div style="color:#8a5a00;font-weight:bold;margin-bottom:3pt;">⚠ 注意事項・心得</div><div>${escapeHtml(m.basic.precautions).replace(/\n/g,'<br>')}</div></div>` : ''}
   <div style="border:1px dashed #d9dee3;padding:8pt 10pt;margin-bottom:12pt;min-height:50pt;font-size:11pt;"><div style="color:#666;font-weight:bold;margin-bottom:4pt;">メモ・備考欄</div></div>
   <div style="font-size:9pt;color:#666;border-top:1px solid #d9dee3;padding-top:5pt;margin-bottom:12pt;">作成日: ${fmtDate(m.createdAt)}${revText}</div>
-  <div style="page-break-before:always;">
-    <h3 style="color:#1b3a5c;font-size:13pt;margin:0 0 8pt;">ワークフロー</h3>
-    <p style="text-align:center;margin:0;">${flowImgTag}</p>
-  </div>
-  <div style="page-break-before:always;">
-    <h3 style="color:#1b3a5c;font-size:13pt;margin:0 0 8pt;">作業手順</h3>
-    ${stepsHtml || '<p style="font-size:11pt;">手順が入力されていません。</p>'}
-  </div>
+  <br clear="all" style="mso-page-break-before:always">
+  <h3 style="color:#1b3a5c;font-size:13pt;margin:0 0 8pt;">ワークフロー</h3>
+  <p style="text-align:center;margin:0;">${flowImgTag}</p>
+  <br clear="all" style="mso-page-break-before:always">
+  <h3 style="color:#1b3a5c;font-size:13pt;margin:0 0 8pt;">作業手順</h3>
+  ${stepsHtml || '<p style="font-size:11pt;">手順が入力されていません。</p>'}
 </div>
 </body>
 </html>`;
