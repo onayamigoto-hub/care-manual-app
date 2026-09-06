@@ -1011,21 +1011,21 @@ function buildWordHtml(m, flowImgTag){
   const stepsHtml = m.steps.map((s,i)=>{
     const bullets = s.procedureLines.filter(l=>l.trim()).map(l=>`<li>${escapeHtml(l)}</li>`).join('') || '<li>(作業手順未入力)</li>';
     const branchHtml = s.branch.enabled
-      ? `<p style="color:#2b6cb0;font-size:11px;margin:6px 0 0;">分岐:「${escapeHtml(s.branch.question||'(条件未入力)')}」 → YES: ${escapeHtml(stepTargetLabel(m,s.branch.yesTarget))} ／ NO: ${escapeHtml(stepTargetLabel(m,s.branch.noTarget))}</p>`
+      ? `<p style="color:#2b6cb0;font-size:10pt;margin:5pt 0 0;">分岐:「${escapeHtml(s.branch.question||'(条件未入力)')}」 → YES: ${escapeHtml(stepTargetLabel(m,s.branch.yesTarget))} ／ NO: ${escapeHtml(stepTargetLabel(m,s.branch.noTarget))}</p>`
       : '';
     // width/height set as real HTML attributes (not just CSS) — Word's HTML-to-doc filter often ignores
     // max-width/max-height in style and instead renders the image at its native pixel size otherwise.
-    const imgCell = s.image ? `<img src="${s.image}" width="120" height="90" style="width:120px;height:90px;">` : '<span style="color:#999;font-size:11px;">画像なし</span>';
+    const imgCell = s.image ? `<img src="${s.image}" width="120" height="90" style="width:120px;height:90px;">` : '<span style="color:#999;font-size:10pt;">画像なし</span>';
     // fixed pixel widths on the table AND every cell (as HTML attributes, not just CSS %) — Word's HTML-to-doc
     // filter can badly miscalculate row/page height when a table mixes percentage and pixel widths, which was
     // producing one giant blank page per step.
     const NUM_W = 40, IMG_W = 150, TABLE_W = 600, TEXT_W = TABLE_W - NUM_W - IMG_W;
-    return `<table width="${TABLE_W}" cellpadding="0" cellspacing="0" border="1" style="border-collapse:collapse;border-color:#d9dee3;margin-bottom:14px;">
+    return `<table width="${TABLE_W}" cellpadding="0" cellspacing="0" border="1" style="border-collapse:collapse;border-color:#d9dee3;margin-bottom:12pt;">
       <tr>
-        <td width="${NUM_W}" style="background:#1b3a5c;color:#ffffff;font-size:18px;font-weight:bold;text-align:center;vertical-align:middle;">${i+1}</td>
-        <td width="${TEXT_W}" style="padding:10px 14px;vertical-align:top;">
-          <p style="margin:0 0 6px;font-weight:bold;font-size:13px;">${escapeHtml(s.itemName||'(未入力)')} ${s.timeEstimate?`<span style="font-weight:normal;font-size:11px;color:#666;">(目安 ${escapeHtml(s.timeEstimate)})</span>`:''}</p>
-          <ul style="margin:0;padding-left:18px;font-size:12px;">${bullets}</ul>
+        <td width="${NUM_W}" style="background:#1b3a5c;color:#ffffff;font-size:14pt;font-weight:bold;text-align:center;vertical-align:middle;">${i+1}</td>
+        <td width="${TEXT_W}" style="padding:8pt 10pt;vertical-align:top;font-size:11pt;">
+          <p style="margin:0 0 5pt;font-weight:bold;">${escapeHtml(s.itemName||'(未入力)')} ${s.timeEstimate?`<span style="font-weight:normal;font-size:10pt;color:#666;">(目安 ${escapeHtml(s.timeEstimate)})</span>`:''}</p>
+          <ul style="margin:0;padding-left:16pt;">${bullets}</ul>
           ${branchHtml}
         </td>
         <td width="${IMG_W}" style="text-align:center;vertical-align:middle;background:#fafafa;">${imgCell}</td>
@@ -1039,28 +1039,41 @@ function buildWordHtml(m, flowImgTag){
 <meta charset="utf-8">
 <title>${escapeHtml(m.basic.title||'手順書')}</title>
 <!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom><w:DoNotOptimizeForBrowser/></w:WordDocument></xml><![endif]-->
+<style>
+  @page Section1 {
+    size: 21cm 29.7cm;
+    margin: 2cm 2cm 2cm 2cm;
+    mso-header-margin: 1cm;
+    mso-footer-margin: 1cm;
+  }
+  div.Section1 { page: Section1; }
+  body { font-family:'游ゴシック','Yu Gothic','メイリオ',sans-serif; font-size:11pt; color:#222; }
+  p { margin:0; }
+</style>
 </head>
-<body style="font-family:'游ゴシック','Yu Gothic','メイリオ',sans-serif;font-size:13px;color:#222;">
-  <h1 style="background:#1b3a5c;color:#ffffff;padding:10px 14px;font-size:20px;margin:0 0 16px;">${m.basic.category?'【'+escapeHtml(m.basic.category)+'】':''}${escapeHtml(m.basic.title||'(タイトル未入力)')}</h1>
-  <table style="width:100%;border-collapse:collapse;margin-bottom:16px;">
-    <tr><th style="background:#eef3f8;color:#1b3a5c;border:1px solid #d9dee3;padding:6px 10px;text-align:left;width:120px;font-size:12px;">事業所</th><td style="border:1px solid #d9dee3;padding:6px 10px;font-size:12px;" colspan="3">${escapeHtml(m.basic.facility)}</td></tr>
-    <tr><th style="background:#eef3f8;color:#1b3a5c;border:1px solid #d9dee3;padding:6px 10px;text-align:left;width:120px;font-size:12px;">対象職種</th><td style="border:1px solid #d9dee3;padding:6px 10px;font-size:12px;">${escapeHtml(m.basic.jobRole)}</td><th style="background:#eef3f8;color:#1b3a5c;border:1px solid #d9dee3;padding:6px 10px;text-align:left;width:120px;font-size:12px;">対象者・範囲</th><td style="border:1px solid #d9dee3;padding:6px 10px;font-size:12px;">${escapeHtml(m.basic.target)}</td></tr>
-    <tr><th style="background:#eef3f8;color:#1b3a5c;border:1px solid #d9dee3;padding:6px 10px;text-align:left;width:120px;font-size:12px;">目的（利用者視点）</th><td style="border:1px solid #d9dee3;padding:6px 10px;font-size:12px;" colspan="3">${escapeHtml(m.basic.purposeUser).replace(/\n/g,'<br>')}</td></tr>
-    <tr><th style="background:#eef3f8;color:#1b3a5c;border:1px solid #d9dee3;padding:6px 10px;text-align:left;width:120px;font-size:12px;">目的（スタッフ視点）</th><td style="border:1px solid #d9dee3;padding:6px 10px;font-size:12px;" colspan="3">${escapeHtml(m.basic.purposeStaff).replace(/\n/g,'<br>')}</td></tr>
-    <tr><th style="background:#eef3f8;color:#1b3a5c;border:1px solid #d9dee3;padding:6px 10px;text-align:left;width:120px;font-size:12px;">完了期限</th><td style="border:1px solid #d9dee3;padding:6px 10px;font-size:12px;">${escapeHtml(m.basic.deadline)}</td><th style="background:#eef3f8;color:#1b3a5c;border:1px solid #d9dee3;padding:6px 10px;text-align:left;width:120px;font-size:12px;">完了時の状態</th><td style="border:1px solid #d9dee3;padding:6px 10px;font-size:12px;">${escapeHtml(m.basic.completionState)}</td></tr>
-    <tr><th style="background:#eef3f8;color:#1b3a5c;border:1px solid #d9dee3;padding:6px 10px;text-align:left;width:120px;font-size:12px;">所要時間目安</th><td style="border:1px solid #d9dee3;padding:6px 10px;font-size:12px;" colspan="3">${escapeHtml(m.basic.totalTime)}</td></tr>
+<body>
+<div class="Section1">
+  <h1 style="background:#1b3a5c;color:#ffffff;padding:8pt 10pt;font-size:16pt;margin:0 0 12pt;">${m.basic.category?'【'+escapeHtml(m.basic.category)+'】':''}${escapeHtml(m.basic.title||'(タイトル未入力)')}</h1>
+  <table style="width:100%;border-collapse:collapse;margin-bottom:12pt;font-size:11pt;">
+    <tr><th style="background:#eef3f8;color:#1b3a5c;border:1px solid #d9dee3;padding:5pt 8pt;text-align:left;width:100pt;">事業所</th><td style="border:1px solid #d9dee3;padding:5pt 8pt;" colspan="3">${escapeHtml(m.basic.facility)}</td></tr>
+    <tr><th style="background:#eef3f8;color:#1b3a5c;border:1px solid #d9dee3;padding:5pt 8pt;text-align:left;width:100pt;">対象職種</th><td style="border:1px solid #d9dee3;padding:5pt 8pt;">${escapeHtml(m.basic.jobRole)}</td><th style="background:#eef3f8;color:#1b3a5c;border:1px solid #d9dee3;padding:5pt 8pt;text-align:left;width:100pt;">対象者・範囲</th><td style="border:1px solid #d9dee3;padding:5pt 8pt;">${escapeHtml(m.basic.target)}</td></tr>
+    <tr><th style="background:#eef3f8;color:#1b3a5c;border:1px solid #d9dee3;padding:5pt 8pt;text-align:left;width:100pt;">目的（利用者視点）</th><td style="border:1px solid #d9dee3;padding:5pt 8pt;" colspan="3">${escapeHtml(m.basic.purposeUser).replace(/\n/g,'<br>')}</td></tr>
+    <tr><th style="background:#eef3f8;color:#1b3a5c;border:1px solid #d9dee3;padding:5pt 8pt;text-align:left;width:100pt;">目的（スタッフ視点）</th><td style="border:1px solid #d9dee3;padding:5pt 8pt;" colspan="3">${escapeHtml(m.basic.purposeStaff).replace(/\n/g,'<br>')}</td></tr>
+    <tr><th style="background:#eef3f8;color:#1b3a5c;border:1px solid #d9dee3;padding:5pt 8pt;text-align:left;width:100pt;">完了期限</th><td style="border:1px solid #d9dee3;padding:5pt 8pt;">${escapeHtml(m.basic.deadline)}</td><th style="background:#eef3f8;color:#1b3a5c;border:1px solid #d9dee3;padding:5pt 8pt;text-align:left;width:100pt;">完了時の状態</th><td style="border:1px solid #d9dee3;padding:5pt 8pt;">${escapeHtml(m.basic.completionState)}</td></tr>
+    <tr><th style="background:#eef3f8;color:#1b3a5c;border:1px solid #d9dee3;padding:5pt 8pt;text-align:left;width:100pt;">所要時間目安</th><td style="border:1px solid #d9dee3;padding:5pt 8pt;" colspan="3">${escapeHtml(m.basic.totalTime)}</td></tr>
   </table>
-  ${m.basic.precautions && m.basic.precautions.trim() ? `<div style="border:1px solid #f0c36d;background:#fffaf0;padding:10px 14px;margin-bottom:16px;"><div style="color:#8a5a00;font-weight:bold;font-size:12px;margin-bottom:4px;">⚠ 注意事項・心得</div><div style="font-size:12px;">${escapeHtml(m.basic.precautions).replace(/\n/g,'<br>')}</div></div>` : ''}
-  <div style="border:1px dashed #d9dee3;padding:10px 14px;margin-bottom:16px;min-height:70px;"><div style="color:#666;font-weight:bold;font-size:11px;margin-bottom:6px;">メモ・備考欄</div></div>
-  <div style="font-size:10px;color:#666;border-top:1px solid #d9dee3;padding-top:6px;margin-bottom:16px;">作成日: ${fmtDate(m.createdAt)}${revText}</div>
+  ${m.basic.precautions && m.basic.precautions.trim() ? `<div style="border:1px solid #f0c36d;background:#fffaf0;padding:8pt 10pt;margin-bottom:12pt;font-size:11pt;"><div style="color:#8a5a00;font-weight:bold;margin-bottom:3pt;">⚠ 注意事項・心得</div><div>${escapeHtml(m.basic.precautions).replace(/\n/g,'<br>')}</div></div>` : ''}
+  <div style="border:1px dashed #d9dee3;padding:8pt 10pt;margin-bottom:12pt;min-height:50pt;font-size:11pt;"><div style="color:#666;font-weight:bold;margin-bottom:4pt;">メモ・備考欄</div></div>
+  <div style="font-size:9pt;color:#666;border-top:1px solid #d9dee3;padding-top:5pt;margin-bottom:12pt;">作成日: ${fmtDate(m.createdAt)}${revText}</div>
   <div style="page-break-before:always;">
-    <h3 style="color:#1b3a5c;font-size:13px;margin:0 0 8px;">ワークフロー</h3>
+    <h3 style="color:#1b3a5c;font-size:13pt;margin:0 0 8pt;">ワークフロー</h3>
     <p style="text-align:center;margin:0;">${flowImgTag}</p>
   </div>
   <div style="page-break-before:always;">
-    <h3 style="color:#1b3a5c;font-size:13px;margin:0 0 8px;">作業手順</h3>
-    ${stepsHtml || '<p>手順が入力されていません。</p>'}
+    <h3 style="color:#1b3a5c;font-size:13pt;margin:0 0 8pt;">作業手順</h3>
+    ${stepsHtml || '<p style="font-size:11pt;">手順が入力されていません。</p>'}
   </div>
+</div>
 </body>
 </html>`;
 }
