@@ -1013,7 +1013,9 @@ function buildWordHtml(m, flowImgTag){
     const branchHtml = s.branch.enabled
       ? `<p style="color:#2b6cb0;font-size:11px;margin:6px 0 0;">分岐:「${escapeHtml(s.branch.question||'(条件未入力)')}」 → YES: ${escapeHtml(stepTargetLabel(m,s.branch.yesTarget))} ／ NO: ${escapeHtml(stepTargetLabel(m,s.branch.noTarget))}</p>`
       : '';
-    const imgCell = s.image ? `<img src="${s.image}" style="max-width:140px;max-height:120px;">` : '<span style="color:#999;font-size:11px;">画像なし</span>';
+    // width/height set as real HTML attributes (not just CSS) — Word's HTML-to-doc filter often ignores
+    // max-width/max-height in style and instead renders the image at its native pixel size otherwise.
+    const imgCell = s.image ? `<img src="${s.image}" width="120" height="90" style="width:120px;height:90px;">` : '<span style="color:#999;font-size:11px;">画像なし</span>';
     return `<table style="width:100%;border:1px solid #d9dee3;border-collapse:collapse;margin-bottom:14px;">
       <tr>
         <td style="width:40px;background:#1b3a5c;color:#ffffff;font-size:18px;font-weight:bold;text-align:center;vertical-align:middle;">${i+1}</td>
@@ -1071,7 +1073,11 @@ async function exportWordDoc(m){
       const MAX_W_CM = 16, MAX_H_CM = 23; // A4 portrait minus typical margins and heading space
       let wCm = MAX_W_CM, hCm = wCm / aspect;
       if(hCm > MAX_H_CM){ hCm = MAX_H_CM; wCm = hCm * aspect; }
-      flowImgTag = `<img src="${pngDataUrl}" style="width:${wCm.toFixed(1)}cm;height:${hCm.toFixed(1)}cm;">`;
+      // width/height as real HTML attributes (in px, 96px = 1in = 2.54cm) — Word's HTML-to-doc filter
+      // often ignores CSS width/height on <img> and falls back to the embedded bitmap's native pixel size.
+      const CM_TO_PX = 96 / 2.54;
+      const wPx = Math.round(wCm * CM_TO_PX), hPx = Math.round(hCm * CM_TO_PX);
+      flowImgTag = `<img src="${pngDataUrl}" width="${wPx}" height="${hPx}" style="width:${wCm.toFixed(1)}cm;height:${hCm.toFixed(1)}cm;">`;
     }catch(e){
       flowImgTag = '<span style="color:#c0392b;">(ワークフロー図の変換に失敗しました)</span>';
     }
